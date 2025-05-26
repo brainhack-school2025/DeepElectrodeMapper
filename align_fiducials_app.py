@@ -2,18 +2,9 @@ import numpy as np
 import os
 import pyvista as pv
 from pyvistaqt import BackgroundPlotter
-from PyQt5.QtWidgets import QPushButton, QApplication, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QPushButton, QApplication, QHBoxLayout, QWidget, QFileDialog
 import sys
 
-# === Parameters ===
-subj = "sub-012"
-base_dir = "sourcedata"
-subj_dir = os.path.join(base_dir, f"{subj}_obj")
-
-obj_file = os.path.join(subj_dir, "model_mesh.obj")
-txt_file = os.path.join(base_dir, f"{subj}_ses-01_acq-structure_electrodes.txt")
-output_file = os.path.join(subj_dir, f"{subj}_aligned_electrodes.txt")
-texture_file = os.path.join(subj_dir, "model_texture.jpg")
 
 # === Load electrode file ===
 def load_electrodes(txt_file):
@@ -96,17 +87,11 @@ def run_alignment_gui(obj_file, electrodes, output_file, texture_file=None):
 
     plotter = BackgroundPlotter()
 
-    # Create the hover marker (yellow translucent sphere)
-    hover_marker = pv.Sphere(radius=0.002)
-    hover_actor = plotter.add_mesh(hover_marker, color='yellow', opacity=0.5)
-    hover_actor.SetVisibility(False)
-
-
     if texture_file and os.path.exists(texture_file):
         texture = pv.read_texture(texture_file)
         plotter.add_mesh(mesh, texture=texture)
     else:
-        plotter.add_mesh(mesh, color="lightgray", opacity=0.5)
+        plotter.add_mesh(mesh, color="lightgray", opacity=0.8)
 
     fiducial_labels = ['nas', 'lhj', 'rhj']
     picked_points = []
@@ -119,34 +104,6 @@ def run_alignment_gui(obj_file, electrodes, output_file, texture_file=None):
             msg.SetText(0, f"Pick: {fiducial_labels[len(picked_points)]}")
         else:
             msg.SetText(0, "Picked all. Click 'Done'.")
-
-    def hover_callback(caller, event):
-        if len(picked_points) >= 3:
-            hover_actor.SetVisibility(False)
-            return
-
-        # Get mouse position from caller (VTK object)
-        x, y = caller.GetEventPosition()
-        picked = plotter.pick_mouse_position(x, y)
-        if picked is None:
-            hover_actor.SetVisibility(False)
-            return
-
-        point_id = mesh.find_closest_point(picked)
-        picked_point = mesh.points[point_id]
-        normal = mesh.point_normals[point_id]
-
-        camera_pos = np.array(plotter.camera_position[0])
-        to_camera = camera_pos - picked_point
-        to_camera /= np.linalg.norm(to_camera)
-
-        if np.dot(to_camera, normal) < 0:
-            hover_actor.SetVisibility(False)
-            return
-
-        hover_marker.center = picked_point
-        hover_actor.SetVisibility(True)
-        plotter.render()
 
     def pick_callback(point):
         if len(picked_points) < 3:
@@ -166,10 +123,6 @@ def run_alignment_gui(obj_file, electrodes, output_file, texture_file=None):
 
             update_message()
 
-
-    plotter.iren.add_observer("MouseMoveEvent", hover_callback)
-
-
     # Always disable before enabling
     plotter.disable_picking()
     plotter.enable_point_picking(
@@ -178,7 +131,6 @@ def run_alignment_gui(obj_file, electrodes, output_file, texture_file=None):
         show_message=False,
         show_point=False
     )
-
 
     def done_alignment():
         if len(picked_points) != 3:
@@ -227,10 +179,27 @@ def run_alignment_gui(obj_file, electrodes, output_file, texture_file=None):
 
 # === Main run ===
 if __name__ == "__main__":
-    electrodes = load_electrodes(txt_file)
-    run_alignment_gui(obj_file, electrodes, output_file, texture_file=texture_file)
-
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
+
+    # === File selection dialogs ===
+    obj_dir = QFileDialog.getExistingDirectory(None, "Select OBJ Folder")
+    if not obj_dir:
+        sys.exit("❌ No OBJ folder selected.")
+
+    txt_path, _ = QFileDialog.getOpenFileName(None, "Select Electrode TXT File", filter="Text Files (*.txt)")
+    if not txt_path:
+        sys.exit("❌ No electrode TXT file selected.")
+
+    # === Infer paths based on folder and file ===
+    subj = os.path.basename(obj_dir).split("_")[0]  # e.g., "sub-273"
+    obj_file = os.path.join(obj_dir, "model_mesh.obj")
+    texture_file = os.path.join(obj_dir, "model_texture.jpg")
+    output_file = os.path.join(obj_dir, f"{subj}_aligned_electrodes.txt")
+
+    electrodes = load_electrodes(txt_path)
+    run_alignment_gui(obj_file, electrodes, output_file, texture_file=texture_file)
+
     app.exec_()
+
