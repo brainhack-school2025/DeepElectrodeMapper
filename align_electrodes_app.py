@@ -1,35 +1,14 @@
 import sys
+import os
 import numpy as np
 import pyvista as pv
 from pyvistaqt import BackgroundPlotter
-from PyQt5.QtWidgets import (QApplication, QWidget, QSlider, QVBoxLayout, QLabel,
-                             QHBoxLayout, QPushButton, QFileDialog)
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QSlider, QVBoxLayout, QLabel,
+    QHBoxLayout, QPushButton, QFileDialog, QMessageBox
+)
 from PyQt5.QtCore import Qt
 from scipy.spatial.transform import Rotation as R
-
-# === Load files ===
-electrode_file = "sourcedata/sub-010_ses-01_acq-structure_electrodes.txt"
-obj_file = "sourcedata/sub-010_obj/model_mesh.obj"
-
-coords = []
-labels = []
-
-with open(electrode_file, 'r') as f:
-    for line in f:
-        parts = line.strip().split()
-        if len(parts) != 4:
-            continue
-        label, x, y, z = parts
-        coords.append([float(x), float(y), float(z)])
-        labels.append(label)
-
-coords = np.array(coords) / 1000  # mm → meters
-
-# Extract fiducials
-fiducial_labels = ['nas', 'lhj', 'rhj']
-fiducial_coords = np.array([coords[labels.index(lab)] for lab in fiducial_labels])
-remaining_labels = [lab for lab in labels if lab not in fiducial_labels]
-remaining_coords = np.array([coords[i] for i, lab in enumerate(labels) if lab not in fiducial_labels])
 
 
 class ElectrodeAligner(QWidget):
@@ -37,14 +16,14 @@ class ElectrodeAligner(QWidget):
         super().__init__()
         self.setWindowTitle("Electrode Alignment Tool")
 
-        self.original_coords = remaining_coords.copy()
+        self.select_obj_folder()
+
+        self.original_coords = self.remaining_coords.copy()
         self.transformed_coords = self.original_coords.copy()
-        self.fiducial_coords = fiducial_coords.copy()
         self.surface_fiducials = []
 
         self.plotter = BackgroundPlotter(show=True)
-        self.mesh = pv.read(obj_file)
-        self.plotter.add_mesh(self.mesh, color="lightgray", opacity=0.8)
+        self.load_mesh()
         self.add_axes()
 
         self.glyph_actor = None
@@ -52,21 +31,63 @@ class ElectrodeAligner(QWidget):
         self.init_ui()
         self.update_plot()
 
+    def select_obj_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select Subject OBJ Folder")
+        if not folder:
+            QMessageBox.critical(self, "Error", "No folder selected.")
+            sys.exit()
+
+        self.obj_folder = folder
+        basename = os.path.basename(folder)
+        subj_id = basename.split("_")[0]  # e.g., "sub-012"
+
+        self.obj_file = os.path.join(folder, "model_mesh.obj")
+        self.tex_file = os.path.join(folder, "model_texture.jpg")
+        self.txt_file = os.path.join(folder, f"{subj_id}_aligned_electrodes.txt")
+
+        if not os.path.exists(self.obj_file) or not os.path.exists(self.txt_file):
+            QMessageBox.critical(self, "Error", "OBJ or electrode file not found in folder.")
+            sys.exit()
+
+        self.labels = []
+        self.coords = []
+
+        with open(self.txt_file, 'r') as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) != 4:
+                    continue
+                label, x, y, z = parts
+                self.coords.append([float(x), float(y), float(z)])
+                self.labels.append(label)
+
+        self.coords = np.array(self.coords) #/ 1000.0  # mm → meters
+        fid_labels = ['nas', 'lhj', 'rhj']
+        self.fiducial_coords = np.array([self.coords[self.labels.index(lab)] for lab in fid_labels])
+        self.remaining_labels = [lab for lab in self.labels if lab not in fid_labels]
+        self.remaining_coords = np.array([self.coords[i] for i, lab in enumerate(self.labels) if lab not in fid_labels])
+
+    def load_mesh(self):
+        self.mesh = pv.read(self.obj_file)
+        self.mesh = self.mesh.compute_normals(point_normals=True, cell_normals=False, auto_orient_normals=True)
+        if os.path.exists(self.tex_file):
+            #self.mesh.texture_map_to_plane(inplace=True)
+            texture = pv.read_texture(self.tex_file)
+            self.plotter.add_mesh(self.mesh, texture=texture)
+        else:
+            self.plotter.add_mesh(self.mesh, color="lightgray", opacity=0.8)
+
     def add_axes(self):
-        arrow_length = 0.05
         origin = np.array([0, 0, 0])
-        x_arrow = pv.Arrow(start=origin, direction=[1, 0, 0], tip_length=0.3, scale=arrow_length)
-        y_arrow = pv.Arrow(start=origin, direction=[0, 1, 0], tip_length=0.3, scale=arrow_length)
-        z_arrow = pv.Arrow(start=origin, direction=[0, 0, 1], tip_length=0.3, scale=arrow_length)
-        self.plotter.add_mesh(x_arrow, color='red', name='X-axis')
-        self.plotter.add_mesh(y_arrow, color='green', name='Y-axis')
-        self.plotter.add_mesh(z_arrow, color='blue', name='Z-axis')
+        arrow_length = 0.05
+        self.plotter.add_mesh(pv.Arrow(origin, [1, 0, 0], scale=arrow_length), color='red', name='X-axis')
+        self.plotter.add_mesh(pv.Arrow(origin, [0, 1, 0], scale=arrow_length), color='green', name='Y-axis')
+        self.plotter.add_mesh(pv.Arrow(origin, [0, 0, 1], scale=arrow_length), color='blue', name='Z-axis')
 
     def init_ui(self):
         layout = QVBoxLayout()
-
         self.sliders = {}
-        slider_specs = {
+        specs = {
             "rx": [-180, 180, 0],
             "ry": [-180, 180, 0],
             "rz": [-180, 180, 0],
@@ -76,12 +97,11 @@ class ElectrodeAligner(QWidget):
             "scale": [50, 200, 100],
         }
 
-        for name, (min_val, max_val, default) in slider_specs.items():
+        for name, (min_val, max_val, default) in specs.items():
             hbox = QHBoxLayout()
             label = QLabel(f"{name.upper()}: {default}")
             slider = QSlider(Qt.Horizontal)
-            slider.setMinimum(min_val)
-            slider.setMaximum(max_val)
+            slider.setRange(min_val, max_val)
             slider.setValue(default)
             slider.valueChanged.connect(lambda val, n=name, l=label: l.setText(f"{n.upper()}: {val}"))
             slider.sliderReleased.connect(self.update_plot)
@@ -90,9 +110,9 @@ class ElectrodeAligner(QWidget):
             layout.addLayout(hbox)
             self.sliders[name] = slider
 
-        fiducial_btn = QPushButton("Pick 3 Surface Fiducials")
-        fiducial_btn.clicked.connect(self.pick_surface_fiducials)
-        layout.addWidget(fiducial_btn)
+        pick_btn = QPushButton("Pick 3 Surface Fiducials")
+        pick_btn.clicked.connect(self.pick_surface_fiducials)
+        layout.addWidget(pick_btn)
 
         save_btn = QPushButton("Save Transformed Coordinates")
         save_btn.clicked.connect(self.save_transformed_coordinates)
@@ -102,27 +122,31 @@ class ElectrodeAligner(QWidget):
 
     def get_params(self):
         return {
-            "rx": self.sliders["rx"].value(),
-            "ry": self.sliders["ry"].value(),
-            "rz": self.sliders["rz"].value(),
-            "tx": self.sliders["tx"].value() / 1000.0,
-            "ty": self.sliders["ty"].value() / 1000.0,
-            "tz": self.sliders["tz"].value() / 1000.0,
-            "scale": self.sliders["scale"].value() / 100.0,
+            k: (self.sliders[k].value() / (1000.0 if k in ["tx", "ty", "tz"] else 100.0 if k == "scale" else 1.0))
+            for k in self.sliders
         }
 
     def update_plot(self):
         params = self.get_params()
-        transformed = self.original_coords * params['scale']
-        rot = R.from_euler('zyx', [params['rz'], params['ry'], params['rx']], degrees=True)
-        transformed = rot.apply(transformed)
-        transformed += np.array([params['tx'], params['ty'], params['tz']])
-        self.transformed_coords = transformed
+        coords = self.original_coords * params["scale"]
+
+        # Step 1: calculate rotation center (centroid of fiducials)
+        center = self.fiducial_coords.mean(axis=0)
+
+        # Step 2: shift to center, rotate, shift back
+        shifted = coords - center
+        rot = R.from_euler('zyx', [params["rz"], params["ry"], params["rx"]], degrees=True)
+        rotated = rot.apply(shifted)
+        rotated += center
+
+        # Step 3: apply translation
+        translated = rotated + np.array([params["tx"], params["ty"], params["tz"]])
+        self.transformed_coords = translated
 
         if self.glyph_actor:
             self.plotter.remove_actor(self.glyph_actor)
 
-        points = pv.PolyData(transformed)
+        points = pv.PolyData(self.transformed_coords)
         sphere = pv.Sphere(radius=0.005)
         glyphs = points.glyph(geom=sphere, scale=False)
         self.glyph_actor = self.plotter.add_mesh(glyphs, color='red')
@@ -140,39 +164,44 @@ class ElectrodeAligner(QWidget):
         self.plotter.enable_point_picking(callback=callback, use_picker=True, show_message=True, show_point=True)
 
     def align_using_fiducials(self):
-        src = self.fiducial_coords  # from electrode file
-        dst = np.array(self.surface_fiducials)  # clicked
+        src = self.fiducial_coords
+        dst = np.array(self.surface_fiducials)
 
         src_mean = src.mean(0)
         dst_mean = dst.mean(0)
         src_centered = src - src_mean
         dst_centered = dst - dst_mean
 
-        U, S, Vt = np.linalg.svd(np.dot(dst_centered.T, src_centered))
-        Rmat = np.dot(U, Vt)
+        U, _, Vt = np.linalg.svd(dst_centered.T @ src_centered)
+        Rmat = U @ Vt
         if np.linalg.det(Rmat) < 0:
             U[:, -1] *= -1
-            Rmat = np.dot(U, Vt)
+            Rmat = U @ Vt
 
-        t = dst_mean - Rmat @ src_mean
-
-        aligned = (Rmat @ self.original_coords.T).T + t
+        T = dst_mean - Rmat @ src_mean
+        aligned = (Rmat @ self.original_coords.T).T + T
         self.transformed_coords = aligned
 
         if self.glyph_actor:
             self.plotter.remove_actor(self.glyph_actor)
-        points = pv.PolyData(aligned)
-        sphere = pv.Sphere(radius=0.005)
-        glyphs = points.glyph(geom=sphere, scale=False)
-        self.glyph_actor = self.plotter.add_mesh(glyphs, color='red')
+        pts = pv.PolyData(aligned)
+        glyph = pts.glyph(geom=pv.Sphere(radius=0.005), scale=False)
+        self.glyph_actor = self.plotter.add_mesh(glyph, color='red')
         self.plotter.render()
 
     def save_transformed_coordinates(self):
-        filename, _ = QFileDialog.getSaveFileName(self, "Save File", "", "Text Files (*.txt);;All Files (*)")
-        if filename:
-            out = np.column_stack((remaining_labels, self.transformed_coords))
-            np.savetxt(filename, out, fmt="%s\t%.6f\t%.6f\t%.6f")
-            print(f"Saved to {filename}")
+        out_path, _ = QFileDialog.getSaveFileName(self, "Save File", "", "Text Files (*.txt);;All Files (*)")
+        if out_path:
+            with open(out_path, 'w') as f:
+                # Write transformed remaining electrodes
+                for label, coord in zip(self.remaining_labels, self.transformed_coords):
+                    f.write(f"{label}\t{coord[0]:.6f}\t{coord[1]:.6f}\t{coord[2]:.6f}\n")
+                # Write fiducials first (unaltered, in meters)
+                fid_labels = ['nas', 'lhj', 'rhj']
+                for label, coord in zip(fid_labels, self.fiducial_coords):
+                    f.write(f"{label}\t{coord[0]:.6f}\t{coord[1]:.6f}\t{coord[2]:.6f}\n")
+
+            print(f"Saved to {out_path}")
 
 
 if __name__ == "__main__":
