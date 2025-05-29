@@ -3,7 +3,7 @@ name = "DeepElectrodeMapper"
 version = "0.0.1"
 authors = [
   { name="Joel P. Diaz-Fong", email="itsjoewithanl@gmail.com" },
-  { name="Lucas", email="" },
+  { name="Lucas", email="lucas@murakami.com.br" },
   { name="Ivy", email="" },
 ]
 description = ""
