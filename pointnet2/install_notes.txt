@@ -1,0 +1,46 @@
+# Python 3.8
+# TensorFlow 2.13.1
+# CUDA 12.3
+
+
+# Download and install repo pin
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
+sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
+
+# Add GPG key
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub
+
+# Add repo
+sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /"
+
+# Install CUDA toolkit
+sudo apt update
+sudo apt install -y cuda-toolkit-12-3
+
+# Add CUDA to Your PATH
+echo 'export PATH=/usr/local/cuda-12.3/bin:$PATH' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=/usr/local/cuda-12.3/lib64:$LD_LIBRARY_PATH' >> ~/.bashrc
+source ~/.bashrc
+
+
+nvcc --version
+# nvcc: NVIDIA (R) Cuda compiler driver
+# Copyright (c) 2005-2023 NVIDIA Corporation
+# Built on Wed_Nov_22_10:17:15_PST_2023
+# Cuda compilation tools, release 12.3, V12.3.107
+# Build cuda_12.3.r12.3/compiler.33567101_0
+
+git clone https://github.com/charlesq34/pointnet2.git
+
+
+
+conda update -n base -c defaults conda
+conda create -n pointnet2_env python=3.8 -y
+
+# Activate env first
+conda activate pointnet2_env
+
+
+
+pip install --upgrade pip
+pip install tensorflow
