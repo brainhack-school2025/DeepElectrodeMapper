@@ -60,7 +60,7 @@ The Deep Electrode Mapper project will rely on the following technologies:
 
 ### Data
 
--> Ultimately, the project template will be used by all BHS participants. Data on the different projects will be aggregareted on the [following page](https://psy6983.brainhackmtl.org/project). This will serve as an additional example gallery in the years to come for future brainhack school students. Many reports from [BHS 2020](https://github.com/brainhack-school2020) already used this template.
+Our data comprises of 144 3D scanned head models acquired with a portable 3D scanner (.obj files), of which 39 have T2-weighted MRI scans while participants wore the EEG cap (.nii). Our data is from the study Alpha oscillations and working memory deficits in ADHD: A multimodal imaging investigation (R01MH116268) - https://nda.nih.gov/edit_collection.html?id=3101.
 
 ### Deliverables
 
@@ -72,7 +72,7 @@ At the end of this project, we will have:
 
 ### Progress overview
 
--> The project was swiftly initiated by P Bellec, based on the existing template created in 2019 by Tristan Glatard and improved by different students. It was really not that hard. Community feedback is expected to lead to rapid further improvements of this first version.
+-> Currently we were working on the preparation of the data to train the PointNet++, preparing the PointNet++ for training, and developing the clustering extraction of centroids coordinates for once the PointNet++ output was ready.
 
 ### Tools I learned during this project
 
