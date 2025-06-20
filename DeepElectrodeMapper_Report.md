@@ -72,7 +72,7 @@ At the end of this project, we will have:
 
 ### Progress overview
 
--> Currently we were working on the preparation of the data to train the PointNet++, preparing the PointNet++ for training, and developing the clustering extraction of centroids coordinates for once the PointNet++ output was ready.
+Currently we worked on the preparation of the data to train the PointNet++, preparing the PointNet++ for training, and developing the clustering for the extraction of the centroids coordinates for when the PointNet++ output will be ready. A subset of the dataset had the electrodes manually labelled so we could have labelled and unlablled data for training and testing the deep learning model. This allowed the creation of two tools for aligning the electrodes to a head model. For the data to be compatible to the deep learning model we transformed data into PointCloud and then HDF5 format both containing labels or not (the script accepts multiple file formats for generalizability). Lastly, we developed a python script to perform clustering of the PointCloud data to extract the centroids and their coordintes, which should be once we have the segmented electrodes from the deep learning model, the coordinates of the electrodes.
 
 ### Tools I learned during this project
 
