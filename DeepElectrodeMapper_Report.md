@@ -76,10 +76,9 @@ Currently we worked on the preparation of the data to train the PointNet++, prep
 
 ### Tools I learned during this project
 
--> * **Meta-project** P Bellec learned how to do a meta project for the first time, which is developping a framework while using it at the same time. It felt really weird, but somehow quite fun as well.
--> * **Github workflow-** The successful use of this template approach will demonstrate that it is possible to incorporate dozens of students presentation on a website collaboratively over a few weeks.
--> * **Project content** Through the project reports generated using the template, it is possible to learn about what exactly the brainhack school students are working on.
-
+* **GitHub** We learned how to use GitHub to share the code and scripts that each of us were working on.
+* **Jupyter Notebook** Learned how to code using Jupyter Notebook, to have a more modular, step by step structure of coding, which was quite helpful in separating the different functions. Moreover, it was useful to debug when there was a problem, as it was easier to identify where the issue was being generated.
+* **VSCode** Throughout the coding for the project using VSCode was very helpful in, as it contained multiple functionalities in one place, beuing able to use the terminal, and code in different files, as well as being able to directly install any necessary packages.
 ### Results
 
 #### Deliverable 1: report template
