@@ -79,31 +79,18 @@ Currently we worked on the preparation of the data to train the PointNet++, prep
 * **GitHub** We learned how to use GitHub to share the code and scripts that each of us were working on.
 * **Jupyter Notebook** Learned how to code using Jupyter Notebook, to have a more modular, step by step structure of coding, which was quite helpful in separating the different functions. Moreover, it was useful to debug when there was a problem, as it was easier to identify where the issue was being generated.
 * **VSCode** Throughout the coding for the project using VSCode was very helpful in, as it contained multiple functionalities in one place, beuing able to use the terminal, and code in different files, as well as being able to directly install any necessary packages.
+
 ### Results
 
-#### Deliverable 1: report template
+#### Deliverable 1: GitHub repository
 
--> You are currently reading the report template! I will let you judge whether it is useful or not. If you think there is something that could be improved, please do not hesitate to open an issue [here](https://github.com/PSY6983-2021/project_template/issues/) and let us know.
+Although the project is still in progress, which signifies that the GitHub repository does not yet have all the final version of the scripts or the trained model, we were able to add some tools for aligning the electrode lables with the 3D scan, as well as some of the scripts for preparing the data for training the deep learning model, and for the clustering of the segmented data after the deep learning output model for achiebing the electrode coordinates.
 
-#### Deliverable 2: project gallery
+#### Deliverable 2: Documentation
 
--> You can check out the [2020 BrainHack School project gallery](https://psy6983.brainhackmtl.org/project/)
-
-##### ECG pupilometry pipeline by Marce Kauffmann
-
-The repository of this project can be found [here](https://github.com/mtl-brainhack-school-2019/ecg_pupillometry_pipeline_kaufmann). The objective was to create a processing pipeline for ECG and pupillometry data. The motivation behind this task is that Marcel's lab (MIST Lab @ Polytechnique Montreal) was conducting a Human-Robot-Interaction user study. The repo features:
- * a [video introduction](http://www.youtube.com/watch/8ZVCNeX42_A) to the project.
- * a presentation [made in a jupyter notebook](https://github.com/mtl-brainhack-school-2019/ecg_pupillometry_pipeline_kaufmann/blob/master/BrainHackPresentation.ipynb) on the results of the project.
- * Notebooks for all analyses.
- * Detailed requirements files, making it easy for others to replicate the environment of the notebook.
- * An overview of the results in the markdown document.
-
-#### Deliverable 3: Instructions
-
- To be made available soon.
+As the deep learning model was not yet trained or tested, we did not yet wrote the documentation, but we will do once the project advances.
 
 ## Conclusion and acknowledgement
 
-The BHS team hope you will find this template helpful in documenting your project. Developping this template was a group effort, and benefitted from the feedback and ideas of all BHS students over the years.
-
-You can also make submit your project to neurolibre https://neurolibre.org/. It is a preprint server for interactive data analyses. It is tailored for publishing interactive neuroscience notebooks that can seamlessly integrate data, text, code and figures.The submission instructions can be found here https://docs.neurolibre.org/en/latest/index.html and the jupyter book docs there https://jupyterbook.org/intro.html.
+To conclude, it would be a relevant step in the clinical and research application of EEG to have a generlizable and accessible tool for localizing the electrodes' coordinates. Although implementing a solution with deep learning is promising, it comes with certain limitations, for example the requirements of having a large dataset for training, and specific set up to use it. Nevertheless it presents the possibility of having a generalizable solution for different file contents and EEG caps. Therefore, we will still continue to attempt to develop the project and assess the viability of the solution.
+We would like to thank the study Alpha oscillations and working memory deficits in ADHD: A multimodal imaging investigation (R01MH116268) for providing and allowing us to use the data for our project. Moreover, we would like to thank the BrainHack School for giving us the space, time, and support to pursue and collaborate on this project.
